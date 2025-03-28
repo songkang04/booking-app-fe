@@ -1,0 +1,12 @@
+# Ignore các file không cần format
+node_modules
+build
+dist
+coverage
+.next
+out
+*.log
+*.md
+*.yaml
+*.yml
+.DS_Store
