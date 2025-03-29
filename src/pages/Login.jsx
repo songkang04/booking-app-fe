@@ -3,12 +3,20 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Login = () => {
-  const [usernameField, setUsernameField] = useState('');
-  const [passwordField, setPasswordField] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const onSubmit = (e) => {
+  const submitToServer = async () => {
+    const data = await fetch('http://127.0.0.1:3001/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    console.log({ data });
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    console.log({ username: usernameField, password: passwordField });
+    submitToServer();
   };
   return (
     <section className="bg-gray-50 dark:bg-gray-900">
@@ -18,7 +26,7 @@ const Login = () => {
             <h1 className="text-xl leading-tight font-bold tracking-tight text-gray-900 md:text-2xl dark:text-white">
               Đăng nhập vào tài khoản của bạn
             </h1>
-            <form className="space-y-4 md:space-y-6" action="#">
+            <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label
                   htmlFor="email"
@@ -27,6 +35,10 @@ const Login = () => {
                   Email của bạn
                 </label>
                 <input
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                  }}
                   type="email"
                   name="email"
                   id="email"
@@ -43,6 +55,10 @@ const Login = () => {
                   Mật khẩu
                 </label>
                 <input
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                  }}
                   type="password"
                   name="password"
                   id="password"
@@ -59,7 +75,6 @@ const Login = () => {
                       aria-describedby="remember"
                       type="checkbox"
                       className="focus:ring-primary-300 dark:focus:ring-primary-600 h-4 w-4 rounded border border-gray-300 bg-gray-50 focus:ring-3 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800"
-                      required
                     />
                   </div>
                   <div className="ml-3 text-sm">
