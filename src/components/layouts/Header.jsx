@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header = () => {
+  const location = useLocation();
+  
   return (
     <header className="absolute inset-x-0 top-0 z-50">
       <nav
@@ -9,7 +11,7 @@ const Header = () => {
         aria-label="Global"
       >
         <div className="flex lg:flex-1">
-          <Link to="#" className="-m-1.5 p-1.5">
+          <Link to="/" className="-m-1.5 p-1.5">
             <span className="sr-only">BOK</span>
             <span className="text-2xl font-bold text-gray-900 dark:text-white">BOOKING</span>
           </Link>
@@ -38,22 +40,30 @@ const Header = () => {
           </button>
         </div>
         <div className="hidden lg:flex lg:gap-x-12">
-          <Link to="#" className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-            Product
+          <Link 
+            to="/" 
+            className={`text-sm/6 font-semibold ${
+              location.pathname === '/' 
+                ? 'text-indigo-600 dark:text-indigo-400' 
+                : 'text-gray-900 dark:text-white'
+            }`}
+          >
+            Trang chủ
           </Link>
-          <Link to="#" className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-            Features
-          </Link>
-          <Link to="#" className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-            Marketplace
-          </Link>
-          <Link to="#" className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-            Company
+          <Link 
+            to="/homestays" 
+            className={`text-sm/6 font-semibold ${
+              location.pathname === '/homestays' 
+                ? 'text-indigo-600 dark:text-indigo-400' 
+                : 'text-gray-900 dark:text-white'
+            }`}
+          >
+            Homestays
           </Link>
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
           <Link to="/login" className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-            Log in <span aria-hidden="true">→</span>
+            Đăng nhập <span aria-hidden="true">→</span>
           </Link>
         </div>
       </nav>
@@ -63,14 +73,10 @@ const Header = () => {
         <div className="fixed inset-0 z-50" />
         <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10 dark:bg-gray-900 dark:sm:ring-gray-700">
           <div className="flex items-center justify-between">
-            <a href="#" className="-m-1.5 p-1.5">
-              <span className="sr-only">Your Company</span>
-              <img
-                className="h-8 w-auto"
-                src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
-                alt=""
-              />
-            </a>
+            <Link to="/" className="-m-1.5 p-1.5">
+              <span className="sr-only">BOK</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">BOOKING</span>
+            </Link>
             <button
               type="button"
               className="-m-2.5 rounded-md p-2.5 text-gray-700 dark:text-gray-300"
@@ -92,37 +98,33 @@ const Header = () => {
           <div className="mt-6 flow-root">
             <div className="-my-6 divide-y divide-gray-500/10 dark:divide-gray-700">
               <div className="space-y-2 py-6">
-                <a
-                  href="#"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-800"
+                <Link
+                  to="/"
+                  className={`-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                    location.pathname === '/' 
+                      ? 'text-indigo-600 dark:text-indigo-400' 
+                      : 'text-gray-900 dark:text-white'
+                  }`}
                 >
-                  Product
-                </a>
-                <a
-                  href="#"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-800"
+                  Trang chủ
+                </Link>
+                <Link
+                  to="/homestays"
+                  className={`-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                    location.pathname === '/homestays' 
+                      ? 'text-indigo-600 dark:text-indigo-400' 
+                      : 'text-gray-900 dark:text-white'
+                  }`}
                 >
-                  Features
-                </a>
-                <a
-                  href="#"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-800"
-                >
-                  Marketplace
-                </a>
-                <a
-                  href="#"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-800"
-                >
-                  Company
-                </a>
+                  Homestays
+                </Link>
               </div>
               <div className="py-6">
                 <Link
                   to="/login"
                   className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-800"
                 >
-                  Log in
+                  Đăng nhập
                 </Link>
               </div>
             </div>
