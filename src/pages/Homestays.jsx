@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import Header from '../components/layouts/Header';
 import HomestayFilters from '../components/HomestayFilters';
 import HomestayList from '../components/HomestayList';
+import homestayService from '../services/homestayService';
 
 const Homestays = () => {
   const [homestays, setHomestays] = useState([]);
@@ -10,37 +10,50 @@ const Homestays = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [filterParams, setFilterParams] = useState({});
 
-  const fetchHomestays = async (params = {}) => {
+  // Chức năng tìm kiếm homestay với các tham số
+  const fetchHomestays = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:3000/api/homestays/search', {
-        params: {
-          ...params,
-          page: currentPage,
-          limit: 8
-        }
+      
+      // Ghi log để debug
+      console.log('Tìm kiếm với params:', { ...filterParams, page: currentPage, limit: 8 });
+      
+      const response = await homestayService.searchHomestays({
+        ...filterParams,
+        page: currentPage,
+        limit: 8
       });
       
-      setHomestays(response.data.data.homestays);
-      setTotalPages(response.data.data.totalPages);
-      setError(null);
+      // Ghi log response
+      console.log('Kết quả từ API:', response);
+      
+      if (response.success) {
+        setHomestays(response.data.data.homestays);
+        setTotalPages(response.data.data.totalPages);
+        setError(null);
+      } else {
+        setError(response.message || 'Không thể tải danh sách homestay');
+      }
     } catch (err) {
+      console.error('Lỗi khi tìm homestay:', err);
       setError('Không thể tải danh sách homestay. Vui lòng thử lại sau.');
-      console.error('Error fetching homestays:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Gọi API khi trang được load hoặc khi currentPage hoặc filterParams thay đổi
   useEffect(() => {
     fetchHomestays();
-  }, [currentPage]);
+  }, [currentPage, filterParams]);
 
-  const handleFilter = (filterParams) => {
-    setCurrentPage(1); // Reset to first page when filtering
-    fetchHomestays(filterParams);
+  // Xử lý khi người dùng áp dụng bộ lọc
+  const handleFilter = (params) => {
+    setCurrentPage(1); // Reset về trang đầu tiên khi lọc
+    setFilterParams(params); // Cập nhật params và trigger useEffect
   };
 
   return (
