@@ -1,8 +1,20 @@
-import React from 'react';
-import Header from '../components/layouts/Header';
 import { Link } from 'react-router-dom';
+import Header from '../components/layouts/Header';
+import { useEffect } from 'react';
+import authService from '../services/authService';
 
 const Home = () => {
+  // effect check token
+  useEffect(() => {
+    const tokenIsValid = authService.isTokenValid();
+    if (tokenIsValid) {
+      // Token hợp lệ, có thể thực hiện các hành động khác
+      console.log('Token hợp lệ');
+    } else {
+      // Token không hợp lệ, thực hiện các hành động khác
+      console.log('Token không hợp lệ');
+    }
+  }, []);
   return (
     <div className="bg-white dark:bg-gray-900">
       <Header />
@@ -44,7 +56,10 @@ const Home = () => {
               >
                 Tìm Homestay
               </Link>
-              <Link to="/homestays" className="text-sm/6 font-semibold text-gray-900 dark:text-white">
+              <Link
+                to="/homestays"
+                className="text-sm/6 font-semibold text-gray-900 dark:text-white"
+              >
                 Tìm hiểu thêm <span aria-hidden="true">→</span>
               </Link>
             </div>

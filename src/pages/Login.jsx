@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,7 +22,7 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-    
+
     // Xóa lỗi khi người dùng thay đổi giá trị
     if (errors[name]) {
       setErrors((prev) => ({
@@ -44,14 +44,14 @@ const Login = () => {
       error.errors.forEach((err) => {
         formattedErrors[err.path[0]] = err.message;
       });
-      
+
       setErrors(formattedErrors);
-      
+
       // Hiển thị lỗi đầu tiên
       if (error.errors.length > 0) {
         toast.error(error.errors[0].message);
       }
-      
+
       return false;
     }
   };
@@ -59,27 +59,16 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Xác thực form bằng Zod
     if (!validateForm()) {
       return;
     }
 
     try {
       setLoading(true);
-      const result = await login(formData.email, formData.password);
-      
-      if (result.success) {
-        // Lưu trạng thái "Ghi nhớ đăng nhập" nếu được chọn
-        if (rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        } else {
-          localStorage.removeItem('rememberMe');
-        }
+      const result = await login(formData.email, formData.password, rememberMe);
 
-        // Hiển thị thông báo thành công
+      if (result.success) {
         toast.success('Đăng nhập thành công!');
-        
-        // Chuyển hướng về trang chủ
         navigate('/');
       } else {
         toast.error(result.message || 'Đăng nhập không thành công');
@@ -114,8 +103,8 @@ const Login = () => {
                   name="email"
                   id="email"
                   className={`focus:ring-primary-600 focus:border-primary-600 block w-full rounded-lg border p-2.5 text-gray-900 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500 ${
-                    errors.email 
-                      ? 'border-red-500 bg-red-50 dark:border-red-600 dark:bg-red-700' 
+                    errors.email
+                      ? 'border-red-500 bg-red-50 dark:border-red-600 dark:bg-red-700'
                       : 'border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-700'
                   }`}
                   placeholder="name@company.com"
@@ -142,8 +131,8 @@ const Login = () => {
                   id="password"
                   placeholder="••••••••"
                   className={`focus:ring-primary-600 focus:border-primary-600 block w-full rounded-lg border p-2.5 text-gray-900 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500 ${
-                    errors.password 
-                      ? 'border-red-500 bg-red-50 dark:border-red-600 dark:bg-red-700' 
+                    errors.password
+                      ? 'border-red-500 bg-red-50 dark:border-red-600 dark:bg-red-700'
                       : 'border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-700'
                   }`}
                   value={formData.password}

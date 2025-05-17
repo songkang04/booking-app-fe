@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 
 // Lấy URL API từ biến môi trường
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const TOKEN_KEY = 'user_token';
 
 // Tạo instance của axios với cấu hình mặc định
 const api = axios.create({
@@ -17,7 +18,8 @@ const api = axios.create({
 // Thêm interceptor request để thêm token xác thực vào header nếu có
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    // Ưu tiên lấy token từ localStorage
+    const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,21 +37,19 @@ api.interceptors.response.use(
   },
   (error) => {
     const { response } = error;
-    
+
     if (response && response.data) {
       // Hiển thị lỗi từ server nếu có
       if (response.status === 401) {
         // Lỗi xác thực
         toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
-        localStorage.removeItem('authToken');
+        // Xóa token từ cả hai storage
+        localStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
         window.location.href = '/login';
       } else if (response.status === 403) {
         // Lỗi quyền truy cập
         toast.error('Bạn không có quyền thực hiện hành động này');
-      } else if (response.status === 422) {
-        // Lỗi validation
-        const { message } = response.data;
-        toast.error(message || 'Dữ liệu không hợp lệ');
       } else {
         // Các lỗi khác
         const { message } = response.data;
@@ -57,7 +57,7 @@ api.interceptors.response.use(
       }
     } else {
       // Lỗi không có response (network error)
-      toast.error('Không thể kết nối đến máy chủ, vui lòng kiểm tra kết nối mạng');
+      toast.error('Không thể kết nối đến máy chủ');
     }
 
     return Promise.reject(error);
