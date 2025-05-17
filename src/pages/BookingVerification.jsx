@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import Header from '../components/layouts/Header';
-import { useAuth } from '../contexts/AuthContext';
-import authService from '../services/authService';
+import bookingService from '../services/bookingService';
 
-const VerifyEmail = () => {
+const BookingVerification = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
   const [status, setStatus] = useState('processing'); // 'processing', 'success', 'error'
   const [message, setMessage] = useState('');
+  const [booking, setBooking] = useState(null);
   const [timer, setTimer] = useState(5);
 
   useEffect(() => {
@@ -18,24 +17,25 @@ const VerifyEmail = () => {
 
     if (!token) {
       setStatus('error');
-      setMessage('Không tìm thấy mã xác thực email. Vui lòng kiểm tra link trong email của bạn.');
+      setMessage('Không tìm thấy mã xác thực đặt phòng. Vui lòng kiểm tra link trong email của bạn.');
       return;
     }
 
-    const verifyEmailToken = async () => {
+    const verifyBookingToken = async () => {
       try {
-        const response = await authService.verifyEmail(token);
+        const response = await bookingService.verifyBooking(token);
 
         if (response.success) {
           setStatus('success');
-          setMessage(response.message || 'Xác thực email thành công!');
+          setBooking(response.data);
+          setMessage(response.message || 'Xác thực đặt phòng thành công!');
 
           // Thiết lập đếm ngược để chuyển hướng
           const countdown = setInterval(() => {
             setTimer((prevTimer) => {
               if (prevTimer <= 1) {
                 clearInterval(countdown);
-                navigate(isAuthenticated ? '/homestays' : '/login');
+                navigate('/profile'); // Chuyển hướng đến trang profile để xem đặt phòng
                 return 0;
               }
               return prevTimer - 1;
@@ -44,20 +44,20 @@ const VerifyEmail = () => {
 
           return () => clearInterval(countdown);
         } else {
-          throw new Error(response.message);
+          throw new Error(response.message || 'Có lỗi xảy ra khi xác thực đặt phòng');
         }
       } catch (error) {
         setStatus('error');
         setMessage(
           error.response?.message ||
           error.message ||
-          'Có lỗi xảy ra khi xác thực email. Vui lòng thử lại sau.'
+          'Có lỗi xảy ra khi xác thực đặt phòng. Vui lòng thử lại sau.'
         );
       }
     };
 
-    verifyEmailToken();
-  }, [location.search, navigate, isAuthenticated]);
+    verifyBookingToken();
+  }, [location.search, navigate]);
 
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen">
@@ -83,7 +83,7 @@ const VerifyEmail = () => {
             {status === 'processing' && (
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
-                <p className="mt-4 text-gray-700 dark:text-gray-300">Đang xác thực email của bạn...</p>
+                <p className="mt-4 text-gray-700 dark:text-gray-300">Đang xác thực đặt phòng của bạn...</p>
               </div>
             )}
 
@@ -94,17 +94,34 @@ const VerifyEmail = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">Xác thực thành công!</h3>
+                <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">Xác thực đặt phòng thành công!</h3>
                 <p className="mt-2 text-gray-700 dark:text-gray-300">{message}</p>
+                {booking && (
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <h4 className="text-md font-medium">Thông tin đặt phòng:</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Homestay: {booking.homestay?.name || 'N/A'}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Ngày nhận phòng: {new Date(booking.checkInDate).toLocaleDateString('vi-VN')}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Ngày trả phòng: {new Date(booking.checkOutDate).toLocaleDateString('vi-VN')}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Trạng thái: {booking.status === 'CONFIRMED' ? 'Đã xác nhận' : booking.status}
+                    </p>
+                  </div>
+                )}
                 <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                  Bạn sẽ được chuyển hướng sau {timer} giây...
+                  Bạn sẽ được chuyển hướng đến trang cá nhân sau {timer} giây...
                 </p>
                 <div className="mt-6">
                   <Link
-                    to={isAuthenticated ? '/homestays' : '/login'}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                    to="/profile"
+                    className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                   >
-                    {isAuthenticated ? 'Xem danh sách homestay' : 'Đăng nhập ngay'}
+                    Đi đến trang cá nhân ngay
                   </Link>
                 </div>
               </div>
@@ -119,18 +136,12 @@ const VerifyEmail = () => {
                 </div>
                 <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">Xác thực không thành công</h3>
                 <p className="mt-2 text-gray-700 dark:text-gray-300">{message}</p>
-                <div className="mt-6 space-y-3">
-                  <Link
-                    to="/login"
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
-                  >
-                    Đăng nhập
-                  </Link>
+                <div className="mt-6">
                   <Link
                     to="/"
-                    className="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                    className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                   >
-                    Về trang chủ
+                    Quay về trang chủ
                   </Link>
                 </div>
               </div>
@@ -142,4 +153,4 @@ const VerifyEmail = () => {
   );
 };
 
-export default VerifyEmail;
+export default BookingVerification;

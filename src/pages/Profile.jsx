@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaSignOutAlt, FaHistory } from 'react-icons/fa';
 import authService from '../services/authService';
+import BookingHistory from '../components/BookingHistory';
 import Header from '../components/layouts/Header';
 
 const Profile = () => {
@@ -56,21 +57,21 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
       // Giả lập API cập nhật thông tin
       // const response = await userService.updateProfile(formData);
-      
+
       // Cập nhật user state với dữ liệu mới
       setUser({
         ...user,
         ...formData
       });
-      
+
       setEdit(false);
       setUpdateSuccess(true);
-      
+
       // Ẩn thông báo thành công sau 3 giây
       setTimeout(() => {
         setUpdateSuccess(false);
@@ -91,7 +92,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <Header />
-      
+
       {/* Gradient decorative background */}
       <div
         className="absolute inset-x-0 top-0 -z-10 transform-gpu overflow-hidden blur-3xl"
@@ -105,29 +106,29 @@ const Profile = () => {
           }}
         />
       </div>
-      
+
       <div className="pt-24 pb-12 px-4 md:px-0">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Thông tin cá nhân</h1>
-          
+
           {loading && (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
             </div>
           )}
-          
+
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
             </div>
           )}
-          
+
           {updateSuccess && (
             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
               Cập nhật thông tin thành công!
             </div>
           )}
-          
+
           {!loading && !error && user && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
               <div className="p-6 md:p-8">
@@ -136,9 +137,9 @@ const Profile = () => {
                     <div className="relative">
                       <div className="w-36 h-36 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                         {user.avatar ? (
-                          <img 
-                            src={user.avatar} 
-                            alt={user.fullName || 'Người dùng'} 
+                          <img
+                            src={user.avatar}
+                            alt={user.fullName || 'Người dùng'}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -159,7 +160,7 @@ const Profile = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="md:w-2/3">
                     <form onSubmit={handleSubmit}>
                       <div className="space-y-4">
@@ -181,7 +182,7 @@ const Profile = () => {
                             <p className="text-gray-900 dark:text-white">{user.firstName + ' ' + user.lastName || 'Chưa cập nhật'}</p>
                           )}
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             <FaEnvelope className="inline mr-2" />
@@ -189,7 +190,7 @@ const Profile = () => {
                           </label>
                           <p className="text-gray-900 dark:text-white">{user.email}</p>
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             <FaPhone className="inline mr-2" />
@@ -207,7 +208,7 @@ const Profile = () => {
                             <p className="text-gray-900 dark:text-white">{user.phone || 'Chưa cập nhật'}</p>
                           )}
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             <FaMapMarkerAlt className="inline mr-2" />
@@ -225,7 +226,7 @@ const Profile = () => {
                             <p className="text-gray-900 dark:text-white">{user.address || 'Chưa cập nhật'}</p>
                           )}
                         </div>
-                        
+
                         <div className="flex justify-between pt-4">
                           {edit ? (
                             <>
@@ -281,14 +282,13 @@ const Profile = () => {
               </div>
             </div>
           )}
-          
+
           <div className="mt-8">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Giao dịch gần đây</h2>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-              <p className="text-gray-500 dark:text-gray-400 text-center py-10">
-                Chưa có giao dịch nào gần đây.
-              </p>
-            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+              <FaHistory className="mr-2" />
+              Lịch sử đặt phòng và giao dịch
+            </h2>
+            <BookingHistory />
           </div>
         </div>
       </div>

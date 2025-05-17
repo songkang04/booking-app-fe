@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import homestayService from '../services/homestayService';
+import bookingService from '../services/bookingService';
+import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/layouts/Header';
 
 // Import các components
@@ -12,12 +14,14 @@ import ReviewsSection from '../components/ReviewsSection';
 import LocationMap from '../components/LocationMap';
 import SimilarHomestays from '../components/SimilarHomestays';
 import BookingWidget from '../components/BookingWidget';
+import BookingStatus from '../components/BookingStatus';
 
 /**
  * Trang chi tiết homestay
  */
 const HomestayDetail = () => {
   const { id } = useParams();
+  const { isAuthenticated, user } = useAuth();
   const [homestay, setHomestay] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [reviewMeta, setReviewMeta] = useState({});
@@ -27,14 +31,16 @@ const HomestayDetail = () => {
   const [reviewPage, setReviewPage] = useState(1);
   const [reviewsError, setReviewsError] = useState(false);
   const [similarError, setSimilarError] = useState(false);
+  const [existingBooking, setExistingBooking] = useState(null);
+  const [checkingBooking, setCheckingBooking] = useState(false);
 
   // Hàm xử lý dữ liệu homestay để đảm bảo đúng định dạng
   const processHomestayData = (data) => {
     if (!data) return null;
-    
+
     // Tạo bản sao của dữ liệu để tránh thay đổi trực tiếp
     const processedData = { ...data };
-    
+
     // Xử lý images có thể là chuỗi JSON hoặc mảng
     if (processedData.images) {
       try {
@@ -44,14 +50,14 @@ const HomestayDetail = () => {
         } else if (Array.isArray(processedData.images) && processedData.images.length > 0) {
           // Nếu là mảng, duyệt qua từng phần tử để xử lý
           const parsedImages = [];
-          
+
           for (let imgStr of processedData.images) {
             if (typeof imgStr === 'string') {
               // Loại bỏ dấu ngoặc và dấu nháy dư thừa
               imgStr = imgStr.replace(/^\[|\]$/g, ''); // Loại bỏ [ và ] ở đầu và cuối
               imgStr = imgStr.replace(/^"|"$/g, '');   // Loại bỏ " ở đầu và cuối
               imgStr = imgStr.replace(/^\\"|\\\"$/g, ''); // Loại bỏ \" ở đầu và cuối
-              
+
               // Nếu vẫn còn định dạng JSON, thử parse
               if (imgStr.startsWith('[') || imgStr.startsWith('"')) {
                 try {
@@ -80,7 +86,7 @@ const HomestayDetail = () => {
               parsedImages.push(String(imgStr).trim());
             }
           }
-          
+
           processedData.images = parsedImages;
         }
       } catch (err) {
@@ -89,14 +95,14 @@ const HomestayDetail = () => {
         processedData.images = [];
       }
     }
-    
+
     // Đảm bảo images luôn là mảng và không có phần tử rỗng hoặc null
     if (!Array.isArray(processedData.images)) {
       processedData.images = [];
     } else {
       // Lọc bỏ phần tử rỗng, null, undefined
       processedData.images = processedData.images.filter(img => img && img.trim() !== '');
-      
+
       // Xử lý lại một lần nữa để đảm bảo không còn dấu ngoặc kép dư thừa
       processedData.images = processedData.images.map(img => {
         if (typeof img === 'string') {
@@ -105,10 +111,10 @@ const HomestayDetail = () => {
         return img;
       });
     }
-    
+
     // Log để debug
     console.log('Processed images:', processedData.images);
-    
+
     return processedData;
   };
 
@@ -124,20 +130,38 @@ const HomestayDetail = () => {
     setError(null);
     setReviewsError(false);
     setSimilarError(false);
+    setExistingBooking(null);
+    setCheckingBooking(false);
 
     const fetchHomestayData = async () => {
       try {
         // Lấy thông tin homestay
         const homestayRes = await homestayService.getHomestayById(id);
         console.log({homestayRes});
-        
+
         if (!homestayRes.success) {
           throw new Error(homestayRes.message || 'Không thể tải thông tin homestay');
         }
-        
+
         // Xử lý và thiết lập dữ liệu homestay
         const processedHomestay = processHomestayData(homestayRes.data.data);
         setHomestay(processedHomestay);
+
+        // Kiểm tra nếu người dùng đã đặt phòng
+        if (isAuthenticated) {
+          setCheckingBooking(true);
+          try {
+            const bookingRes = await bookingService.checkUserHomestayBooking(id);
+            if (bookingRes.success && bookingRes.hasBooking) {
+              setExistingBooking(bookingRes.bookingDetails);
+            }
+          } catch (err) {
+            console.error('Không thể kiểm tra trạng thái đặt phòng:', err);
+            // Không hiển thị lỗi với người dùng, chỉ log và tiếp tục
+          } finally {
+            setCheckingBooking(false);
+          }
+        }
 
         // Lấy đánh giá và homestay tương tự - xử lý riêng để không ảnh hưởng lẫn nhau nếu một trong hai lỗi
         try {
@@ -176,11 +200,11 @@ const HomestayDetail = () => {
               // Xử lý dữ liệu homestay tương tự - đảm bảo images được xử lý đúng
               let processedSimilarHomestays = [];
               const rawHomestays = similarData.data || similarData;
-              
+
               if (Array.isArray(rawHomestays)) {
                 processedSimilarHomestays = rawHomestays.map(homestay => processHomestayData(homestay));
               }
-              
+
               setSimilarHomestays(processedSimilarHomestays);
             }
           } else {
@@ -220,7 +244,7 @@ const HomestayDetail = () => {
       if (reviewsRes.success) {
         const reviewsData = reviewsRes.data;
         let newReviews = [];
-        
+
         if (reviewsData) {
           // Kiểm tra cấu trúc dữ liệu
           if (reviewsData.data) {
@@ -230,7 +254,7 @@ const HomestayDetail = () => {
             newReviews = reviewsData;
           }
         }
-        
+
         setReviews(prevReviews => [...prevReviews, ...newReviews]);
         setReviewPage(nextPage);
       }
@@ -245,12 +269,12 @@ const HomestayDetail = () => {
       <div className="fixed top-0 left-0 right-0 z-30">
         {/* Header */}
         <Header />
-        
+
         {/* Nút quay lại luôn ở dưới header */}
         <div className="bg-white dark:bg-gray-800 shadow-md py-3 px-4 border-b border-gray-200 dark:border-gray-700">
           <div className="container mx-auto">
-            <Link 
-              to="/homestays" 
+            <Link
+              to="/homestays"
               className="inline-flex items-center text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400"
             >
               <FaArrowLeft className="mr-2" />
@@ -259,7 +283,7 @@ const HomestayDetail = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Gradient decorative background */}
       <div
         className="absolute inset-x-0 top-0 -z-10 transform-gpu overflow-hidden blur-3xl"
@@ -367,7 +391,7 @@ const HomestayDetail = () => {
                         </div>
                         <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{homestay.address}</p>
                       </div>
-                      
+
                       <div className="md:text-right">
                         <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                           {new Intl.NumberFormat('vi-VN').format(homestay.price || 0)}đ
@@ -375,7 +399,7 @@ const HomestayDetail = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="mt-4 flex flex-wrap gap-2">
                       <div className="inline-flex items-center bg-indigo-50 dark:bg-gray-700 px-3 py-1 rounded-full">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600 dark:text-indigo-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -393,7 +417,7 @@ const HomestayDetail = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Mô tả homestay */}
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm mb-8">
                     <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Giới thiệu về chỗ ở</h2>
@@ -467,10 +491,10 @@ const HomestayDetail = () => {
                           <div className="text-gray-600 dark:text-gray-400">{homestay.address}</div>
                         </div>
                       </div>
-                      
+
                       <div className="mt-4 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                         <div className="relative pb-[60%] h-0">
-                          <iframe 
+                          <iframe
                             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d118223.48670728855!2d104.50374507154306!3d20.835996008628583!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x313271231205f021%3A0xd836aff4c3ffb19a!2zTOG7mWMgQ2jDonUsIE3hu5ljIENow6J1LCBTxqFuIExh!5e0!3m2!1svi!2s!4v1647101348380!5m2!1svi!2s"
                             className="absolute top-0 left-0 w-full h-full"
                             loading="lazy"
@@ -479,9 +503,9 @@ const HomestayDetail = () => {
                           ></iframe>
                         </div>
                         <div className="py-2 px-3 bg-gray-50 dark:bg-gray-700">
-                          <a 
+                          <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(homestay.address || '')}`}
-                            target="_blank" 
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center"
                           >
@@ -546,26 +570,38 @@ const HomestayDetail = () => {
                       </div>
                     </div>
                   ) : (
-                    <ReviewsSection 
-                      reviews={reviews} 
-                      meta={reviewMeta} 
+                    <ReviewsSection
+                      reviews={reviews}
+                      meta={reviewMeta}
                       onLoadMore={handleLoadMoreReviews}
                       className="mb-8"
                     />
                   )}
                 </div>
-                
-                {/* Sidebar với booking widget */}
+
+                {/* Sidebar với booking widget hoặc booking status */}
                 <div className="lg:col-span-1">
                   <div className="lg:sticky lg:top-32">
-                    <BookingWidget 
-                      homestay={homestay} 
-                      className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 dark:border-gray-700"
-                    />
+                    {checkingBooking ? (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 dark:border-gray-700 flex justify-center items-center h-80">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                      </div>
+                    ) : existingBooking ? (
+                      <BookingStatus
+                        booking={existingBooking}
+                        homestay={homestay}
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 dark:border-gray-700"
+                      />
+                    ) : (
+                      <BookingWidget
+                        homestay={homestay}
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 dark:border-gray-700"
+                      />
+                    )}
                   </div>
                 </div>
               </div>
-              
+
               {/* Homestay tương tự hoặc thông báo không có */}
               {similarError ? (
                 <div className="mt-12 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
@@ -586,8 +622,8 @@ const HomestayDetail = () => {
                   </div>
                 </div>
               ) : (
-                <SimilarHomestays 
-                  homestays={similarHomestays} 
+                <SimilarHomestays
+                  homestays={similarHomestays}
                   className="mt-12"
                 />
               )}
