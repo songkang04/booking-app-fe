@@ -58,7 +58,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     if (!validateForm()) {
       return;
     }
@@ -99,7 +99,6 @@ const Login = () => {
                   Email của bạn
                 </label>
                 <input
-                  type="email"
                   name="email"
                   id="email"
                   className={`focus:ring-primary-600 focus:border-primary-600 block w-full rounded-lg border p-2.5 text-gray-900 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500 ${
@@ -110,7 +109,6 @@ const Login = () => {
                   placeholder="name@company.com"
                   value={formData.email}
                   onChange={handleChange}
-                  required
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -137,7 +135,6 @@ const Login = () => {
                   }`}
                   value={formData.password}
                   onChange={handleChange}
-                  required
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">
